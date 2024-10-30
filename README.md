@@ -304,3 +304,132 @@ In the the `blog/views.py` create the following function-based views:
         path("category/<category>", views.blog_category, name="blog_category"),
     ]
     ```
+
+## Template inheritance and adding CSS
+
+1. At the root of your project create the `templates` directory
+
+2. Create the `templates/base.html` file and add the following code:
+
+    ```html
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>The Blog of All Blogs</title>
+    </head>
+    <body>
+    <h1>The Blog of All Blogs</h1>
+    <a href="{% url 'blog:blog_index' %}">Home</a>
+    <hr>
+    {% block page_title %}{% endblock page_title %}
+    {% block page_content %}{% endblock page_content %}
+    </body>
+    </html>
+    ```
+
+3. Add the following template tag to the top of the `blog/templates/blog/index.html` and `blog/templates/blog/detail.html` files:
+
+    ```html
+    {% extends "base.html" %}
+    ```
+
+4. Add the root templates directory to the `config/settings.py` file:
+
+    ```python
+    TEMPLATES = [
+        {
+            # ....
+            "DIRS": [BASE_DIR / "templates"],
+            # .....
+        },
+    ]
+    ```
+
+5. Add the external CSS stylesheet to the `templates/base.html` file:
+
+    ```html
+    <head>
+        <!-- .... -->
+        <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+        <!-- .... -->
+    </head>
+    ```
+
+## Adding comments to the blog
+
+1. Create the `blog/forms.py` file:
+
+    ```python
+    from django import forms
+
+    class CommentForm(forms.Form):
+        body = forms.CharField(
+            widget=forms.Textarea(
+                attrs={"class": "form-control", "placeholder": "Leave a comment..."}
+            )
+        )
+    ```
+
+2. Modify the `blog_detail` view to add the CommentForm:
+
+    ```python
+    from django.http import HttpResponseRedirect
+    from .forms import CommentForm
+
+    def blog_detail(request, pk):
+        post = Post.objects.get(pk=pk)
+        form = CommentForm()
+        if request.method == "POST":
+            form = CommentForm(request.POST)
+            if form.is_valid():
+                comment = Comment(
+                    body = form.cleaned_data["body"],
+                    post = post,
+                    author = request.user
+                )
+                comment.save()
+                return HttpResponseRedirect(request.path_info)
+        
+        comments = Comment.objects.filter(post=post)
+        context = {
+            "comments": comments,
+            "form": form,
+            "post": post,
+        }
+        return render(request, "blog/detail.html", context)
+    ```
+
+3. Modify the `blog/templates/blog.detail.html` file to add the comments and comment form:
+
+    ```html
+    {% block page_title %}
+    <h2>{{ post.title }}</h2>
+    {% endblock page_title %}
+
+    {% block page_content %}
+        <small>
+            <!-- ... -->
+        </small>
+        <p>{{ post.body | linebreaks }}</p>
+
+        <h3>Leave a comment:</h3>
+        <form method="post">
+            {% csrf_token %}
+            <div>
+                {{ form.body }}
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+
+        <h3>Comments:</h3>
+        {% for comment in comments %}
+            <p>
+                On {{ comment.created_on.date }} <b>{{ comment.author.first_name }}</b> wrote:
+            </p>
+            <p>
+                {{ comment.body | linebreaks }}
+            </p>
+        {% endfor %}
+    {% endblock page_content %}
+    ```

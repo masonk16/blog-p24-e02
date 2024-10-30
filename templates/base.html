@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>The Blog of All Blogs</title>
+        <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+    </head>
+    <body>
+        <h1>The Blog of All Blogs</h1>
+        <a href="{% url 'blog:blog_index' %}">Home</a>
+    <hr>
+        {% block page_title %}{% endblock page_title %}
+        {% block page_content %}{% endblock page_content %}
+    </body>
+    </html>
