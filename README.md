@@ -231,3 +231,76 @@ In the the `blog/views.py` create the following function-based views:
         }
         return render(request, "blog/detail.html", context)
     ```
+
+## Template setup
+
+1. Create the `templates/blog` directory inside `blog` app
+
+2. Create the `index.html` template in `templates/blog` directory:
+
+    ```
+    {% block page_title %}
+    <h2>Blog Posts</h2>
+    {% endblock page_title %}
+
+    {% block page_content %}
+        {% block posts %}
+            {% for post in posts %}
+                <h3><a href="{% url 'blog_detail' post.pk %}">{{ post.title }}</a></h3>
+                <small>
+                    {{ post.created_on.date }} | Categories:
+                    {% for category in post.categories.all %}
+                        <a href="{% url 'blog_category' category.name %}">
+                            {{ category.name }}
+                        </a>
+                    {% endfor %}
+                </small>
+                <p>{{ post.body | slice:":400" }}...</p>
+            {% endfor %}
+        {% endblock posts %}
+    {% endblock page_content %}
+    ```
+
+3. Create the `category.html` template in the `blog/templates/blog` directory:
+
+    ```
+    {% extends "blog/index.html" %}
+
+    {% block page_title %}
+        <h2>{{ category }}</h2>
+    {% endblock page_title %}
+    ```
+
+4. Create the `detail.html` template in `blog/templates/blog` directory:
+
+    ```
+    {% block page_title %}
+        <h2>{{ post.title }}</h2>
+    {% endblock page_title %}
+
+    {% block page_content %}
+        <small>
+            {{ post.created_on.date }} | Categories:
+            {% for category in post.categories.all %}
+                <a href="{% url 'blog_category' category.name %}">
+                    {{ category.name }}
+                </a>
+            {% endfor %}
+        </small>
+        <p>{{ post.body | linebreaks }}</p>
+    {% endblock page_content %}
+    ```
+
+## Create URL routes
+
+1. In the `blog/urls.py` file add the routes for the views:
+
+    ```python
+    from . import views
+
+    urlpatterns = [
+        path("", views.blog_index, name="blog_index"),
+        path("post/<int:pk>/", views.blog_detail, name="blog_detail"),
+        path("category/<category>", views.blog_category, name="blog_category"),
+    ]
+    ```
